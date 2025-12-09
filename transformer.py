@@ -14,8 +14,7 @@ class Transformer(nn.Module):
         self.mha = MultiHeadAttention(d_model, num_heads, dropout=dropout)
         self.ffn = FeedForwardNetwork(d_model, d_ff, dropout=dropout)
 
-
-        def forward(self, input: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
-            output = self.mha(input, mask, device=self.device)
-            output = self.ffn(output, device=self.device)
-            return output
+    def forward(self, input: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
+        output = self.mha(input, mask, device=self.device)
+        output = self.ffn(output, device=self.device)
+        return output
