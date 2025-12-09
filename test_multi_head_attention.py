@@ -1,4 +1,4 @@
-import mult_head_attention
+from multi_head_attention import MultiHeadAttention
 import torch
 
 import unittest
@@ -10,7 +10,7 @@ class TestMultiHeadAttentionBlock(unittest.TestCase):
         self.seq_len = 64
         self.batch_size = 64
 
-        self.model = mult_head_attention.MultiHeadAttentionBlock(self.d_model, self.num_heads)
+        self.model = MultiHeadAttention(self.d_model, self.num_heads)
 
     def test_dimensionality(self):
         input, _ = torch.randn((self.batch_size, self.seq_len, self.d_model))

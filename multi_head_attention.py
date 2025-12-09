@@ -1,15 +1,22 @@
+import math
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
+from torch import Tensor
 
-class MultiHeadAttentionBlock(nn.Module):
+
+class MultiHeadAttention(nn.Module):
     """
     Implement Multi Head Attention block with tunable num_query_heads and num_key_value_heads.
     So that can be setup as Multi Query Attention block or Group Query Attention block.
     """
-    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1, mask: torch.Tensor = None):
+
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1, device: torch.device = torch.device('cpu')):
         super().__init__()
+
+        self.device = device
 
         assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
 
@@ -17,18 +24,16 @@ class MultiHeadAttentionBlock(nn.Module):
         self.num_heads = num_heads
         self.d_k = torch.tensor(d_model // num_heads)
 
-        self.q_proj = nn.Linear(d_model, d_model, bias=True)
-        self.k_proj = nn.Linear(d_model, d_model, bias=True)
-        self.v_proj = nn.Linear(d_model, d_model, bias=True)
-        self.o_proj = nn.Linear(d_model, d_model, bias=True)
+        self.q_proj = nn.Linear(d_model, d_model, bias=True, device=device)
+        self.k_proj = nn.Linear(d_model, d_model, bias=True, device=device)
+        self.v_proj = nn.Linear(d_model, d_model, bias=True, device=device)
+        self.o_proj = nn.Linear(d_model, d_model, bias=True, device=device)
 
         self.dropout = None if math.isclose(dropout, 0.0) else nn.Dropout(dropout)
 
-        self.mask = mask
+        self.layer_norm = nn.LayerNorm(d_model, device=device)
 
-        self.layer_norm = nn.LayerNorm(d_model)
-
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input: torch.Tensor, mask: torch.Tensor = None) -> tuple[Tensor | Any, Tensor | Any]:
         batch_size, seq_len, d_model = input.size()
 
         # Pre-norm
@@ -43,8 +48,8 @@ class MultiHeadAttentionBlock(nn.Module):
         attn_scores = torch.matmul(Q, K.transpose(-1, -2))
         attn_scores = attn_scores / torch.sqrt(self.d_k)
 
-        if self.mask is not None:
-            attn_scores = attn_scores.masked_fill(self.mask == 0, -1e9)
+        if mask is not None:
+            attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
 
         attn_weights = F.softmax(attn_scores, dim=-1)
 
